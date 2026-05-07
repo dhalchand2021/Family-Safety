@@ -30,27 +30,27 @@ jobs:
         run: |
           cd parent-app
           if [ ! -d "ios" ] || [ ! -d "ios/FamilySafetyParent.xcodeproj" ]; then
-            echo "Native iOS project missing. Attempting to generate..."
-            mkdir ../tmp_src
-            cp -r src ../tmp_src/
-            cp App.tsx ../tmp_src/
-            cp package.json ../tmp_src/
+            echo "Native iOS project missing. Attempting to generate in sibling directory..."
             
-            # Fixed: Changed --pm to --npm for older CLI versions and added --skip-install to prevent hanging
-            npx react-native@0.72.3 init FamilySafetyParent --directory . --skip-install --version 0.72.3 --npm
+            # Initialize in a fresh directory to avoid "mkdir ''" errors
+            cd ..
+            npx react-native@0.72.3 init FamilySafetyParent --directory native-temp --skip-install --version 0.72.3 --npm --package-name com.familysafety.parent
             
-            cp -r ../tmp_src/src/* ./src/
-            cp ../tmp_src/App.tsx ./App.tsx
-            cp ../tmp_src/package.json ./package.json
+            # Copy native folders back to parent-app
+            cp -r native-temp/ios parent-app/
+            cp -r native-temp/android parent-app/
             
+            # Cleanup
+            rm -rf native-temp
+            
+            cd parent-app
             # Ensure the index.js and exportOptions.plist are present
             if [ ! -f "index.js" ]; then
               echo "import {AppRegistry} from 'react-native'; import App from './App'; import {name as appName} from './package.json'; AppRegistry.registerComponent(appName, () => App);" > index.js
             fi
+            
             mkdir -p ios
-            if [ ! -f "ios/exportOptions.plist" ]; then
-              echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>method</key><string>ad-hoc</string><key>teamID</key><string>YOUR_TEAM_ID</string><key>uploadBitcode</key><false/><key>compileBitcode</key><false/><key>destination</key><string>export</string><key>signingStyle</key><string>automatic</string></dict></plist>' > ios/exportOptions.plist
-            fi
+            echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>method</key><string>ad-hoc</string><key>teamID</key><string>YOUR_TEAM_ID</string><key>uploadBitcode</key><false/><key>compileBitcode</key><false/><key>destination</key><string>export</string><key>signingStyle</key><string>automatic</string></dict></plist>' > ios/exportOptions.plist
           fi
 
       - name: Setup Ruby
