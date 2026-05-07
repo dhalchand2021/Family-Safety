@@ -53,6 +53,12 @@ jobs:
             echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>method</key><string>ad-hoc</string><key>teamID</key><string>YOUR_TEAM_ID</string><key>uploadBitcode</key><false/><key>compileBitcode</key><false/><key>destination</key><string>export</string><key>signingStyle</key><string>automatic</string></dict></plist>' > ios/exportOptions.plist
           fi
 
+      - name: Fix Reanimated for CI
+        run: |
+          cd parent-app
+          # Force resolution of reanimated to 3.3.0 to match RN 0.72.3
+          npm install react-native-reanimated@3.3.0 --save-exact
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -63,7 +69,8 @@ jobs:
         run: |
           cd parent-app/ios
           if [ -f "Podfile" ]; then
-            pod install
+            # Update pods to ensure reanimated version is picked up correctly
+            pod install || (pod update && pod install)
           fi
 
       - name: Build iOS Archive
