@@ -5,9 +5,6 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     name: Build iOS IPA
@@ -34,19 +31,26 @@ jobs:
           cd parent-app
           if [ ! -d "ios" ] || [ ! -d "ios/FamilySafetyParent.xcodeproj" ]; then
             echo "Native iOS project missing. Attempting to generate..."
-            # Move existing files to a temp location to avoid init conflicts
             mkdir ../tmp_src
             cp -r src ../tmp_src/
             cp App.tsx ../tmp_src/
             cp package.json ../tmp_src/
             
-            # Run init to generate native folders
-            npx react-native@0.72.3 init FamilySafetyParent --directory . --skip-install --version 0.72.3 --pm npm --force
+            # Use --force and handle the prompt non-interactively
+            yes | npx react-native@0.72.3 init FamilySafetyParent --directory . --skip-install --version 0.72.3 --pm npm
             
-            # Restore our source code
             cp -r ../tmp_src/src/* ./src/
             cp ../tmp_src/App.tsx ./App.tsx
             cp ../tmp_src/package.json ./package.json
+            
+            # Ensure the index.js and exportOptions.plist are present
+            if [ ! -f "index.js" ]; then
+              echo "import {AppRegistry} from 'react-native'; import App from './App'; import {name as appName} from './package.json'; AppRegistry.registerComponent(appName, () => App);" > index.js
+            fi
+            mkdir -p ios
+            if [ ! -f "ios/exportOptions.plist" ]; then
+              cp ../parent-app/ios/exportOptions.plist ./ios/exportOptions.plist || echo "Using default export options"
+            fi
           fi
 
       - name: Setup Ruby
@@ -58,19 +62,30 @@ jobs:
       - name: Install CocoaPods
         run: |
           cd parent-app/ios
-          pod install
+          if [ -f "Podfile" ]; then
+            pod install
+          fi
 
       - name: Build iOS Archive
         run: |
           cd parent-app
           npx react-native bundle --dev false --platform ios --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios
           cd ios
-          xcodebuild -workspace FamilySafetyParent.xcworkspace -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
+          if [ -d "FamilySafetyParent.xcworkspace" ]; then
+            xcodebuild -workspace FamilySafetyParent.xcworkspace -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
+          else
+            xcodebuild -project FamilySafetyParent.xcodeproj -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
+          fi
 
       - name: Export IPA
         run: |
           cd parent-app/ios
-          xcodebuild -exportArchive -archivePath FamilySafetyParent.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build
+          if [ -f "exportOptions.plist" ]; then
+             xcodebuild -exportArchive -archivePath FamilySafetyParent.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build
+          else
+             echo "Error: exportOptions.plist missing. Cannot export IPA."
+             exit 1
+          fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
