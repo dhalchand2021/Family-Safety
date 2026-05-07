@@ -46,7 +46,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging-ktx'
 
     // WebRTC
-    implementation 'org.webrtc:google-webrtc:1.0.32006'
+    implementation 'com.github.webrtc-sdk:android:104.5112.09'
 
     // Socket.IO
     implementation ('io.socket:socket.io-client:2.1.0') {

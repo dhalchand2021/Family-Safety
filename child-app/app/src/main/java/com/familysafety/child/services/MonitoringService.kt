@@ -1,6 +1,9 @@
 package com.familysafety.child.services
 
 import android.app.*
+import android.util.Log
+import org.json.JSONObject
+import org.webrtc.IceCandidate
 import android.content.Intent
 import android.os.IBinder
 import android.os.Build
@@ -62,7 +65,7 @@ class MonitoringService : Service() {
 
             monitoringEngine = MonitoringEngine(this, deviceId)
             webRTCManager = WebRTCManager(socket!!, this)
-            commandListener = CommandListener(socket!!, webRTCManager!!, monitoringEngine!!, preferenceHelper)
+            commandListener = CommandListener(socket!!, webRTCManager!!, monitoringEngine!!, preferenceHelper, this)
 
             socket?.on("offer") { args ->
                 val data = args[0] as JSONObject
@@ -111,7 +114,25 @@ class MonitoringService : Service() {
     }
 
     private fun startMonitoring() {
-        // Logic to start SMS, Call, Location tracking
+        monitoringEngine?.startAllMonitoring()
+    }
+
+    fun updateNotification(message: String) {
+        val notificationIntent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, notificationIntent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+        )
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Family Safety Active")
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(1, notification)
     }
 
     override fun onBind(intent: Intent?): IBinder? {

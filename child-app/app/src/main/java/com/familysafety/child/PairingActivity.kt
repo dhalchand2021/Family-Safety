@@ -1,6 +1,7 @@
 package com.familysafety.child
 
 import android.graphics.Bitmap
+import android.util.Base64
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.TextView

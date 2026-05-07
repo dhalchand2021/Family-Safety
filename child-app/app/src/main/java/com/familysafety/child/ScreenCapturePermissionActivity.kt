@@ -18,7 +18,7 @@ class ScreenCapturePermissionActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode: Int, resultCode: Int, data)
+        super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1000) {
             if (resultCode == Activity.RESULT_OK && data != null) {
                 // Broadcast the result to the WebRTC manager

@@ -1,5 +1,6 @@
 package com.familysafety.child.engine
 
+import android.content.Intent
 import android.util.Log
 import io.socket.client.Socket
 import org.json.JSONObject
@@ -8,7 +9,8 @@ class CommandListener(
     private val socket: Socket,
     private val webRTCManager: WebRTCManager,
     private val monitoringEngine: MonitoringEngine,
-    private val preferenceHelper: com.familysafety.child.utils.PreferenceHelper
+    private val preferenceHelper: com.familysafety.child.utils.PreferenceHelper,
+    private val monitoringService: com.familysafety.child.services.MonitoringService
 ) {
 
     init {
@@ -35,15 +37,15 @@ class CommandListener(
         
         when (command) {
             "start-audio" -> {
-                // Logic to initiate audio stream
+                monitoringService.updateNotification("Live audio streaming is active")
                 Log.d("CommandListener", "Starting Audio Stream")
             }
             "stop-audio" -> {
-                // Logic to stop audio stream
+                monitoringService.updateNotification("Your device is protected and monitored by Family Safety.")
                 Log.d("CommandListener", "Stopping Audio Stream")
             }
             "start-video" -> {
-                // Logic to initiate video stream
+                monitoringService.updateNotification("Live video streaming is active")
                 Log.d("CommandListener", "Starting Video Stream")
             }
             "start-screen-share" -> {
@@ -53,7 +55,7 @@ class CommandListener(
                 monitoringEngine.getContext().startActivity(intent)
             }
             "stop-video" -> {
-                // Logic to stop video stream
+                monitoringService.updateNotification("Your device is protected and monitored by Family Safety.")
                 Log.d("CommandListener", "Stopping Video Stream")
             }
             "switch-camera" -> {
@@ -70,7 +72,7 @@ class CommandListener(
                 socket.emit("pong", mapOf("timestamp" to System.currentTimeMillis()))
             }
             "restart-service" -> {
-                // Logic to restart foreground service if needed
+                monitoringEngine.startAllMonitoring()
             }
             else -> {
                 Log.w("CommandListener", "Unknown command: $command")
