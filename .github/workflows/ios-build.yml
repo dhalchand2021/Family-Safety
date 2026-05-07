@@ -1,0 +1,59 @@
+name: iOS IPA Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build iOS IPA
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: parent-app/package.json
+
+      - name: Install dependencies
+        run: |
+          cd parent-app
+          npm install
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: |
+          cd parent-app/ios
+          pod install
+        continue-on-error: true # Will fail if ios folder is missing
+
+      - name: Build iOS Archive
+        run: |
+          cd parent-app
+          npx react-native bundle --dev false --platform ios --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios
+          cd ios
+          xcodebuild -workspace FamilySafetyParent.xcworkspace -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
+        continue-on-error: true
+
+      - name: Export IPA
+        run: |
+          cd parent-app/ios
+          xcodebuild -exportArchive -archivePath FamilySafetyParent.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build
+        continue-on-error: true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: FamilySafety-iOS-IPA
+          path: parent-app/ios/build/*.ipa

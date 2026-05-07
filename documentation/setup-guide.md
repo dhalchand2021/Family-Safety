@@ -71,20 +71,57 @@
 - **Screen Time Analytics**: View detailed app usage distribution and total daily usage in `ScreenTimeScreen.tsx`.
 - **Encryption**: All synced logs are encrypted with AES-256-GCM. The shared secret is derived during the ECDH pairing handshake.
 
-## 7. iOS Testing with AltServer
+## 7. iOS Testing with AltServer & GitHub Actions
 To test the Parent App on an actual iOS device without an Apple Developer Program membership:
-1. **Prepare IPA**: You must generate a production IPA of the React Native app (requires a Mac or CI like GitHub Actions).
-2. **Install AltServer**: Download and install [AltServer](https://altstore.io/) on your Windows/Mac computer.
-3. **Connect Device**: Connect your iPhone to the computer via USB.
-4. **Sideload**:
-   - Right-click the AltServer icon in the system tray.
-   - Select "Install AltStore" -> [Your Device].
-   - Once AltStore is on your phone, open it and sign in with your Apple ID.
-   - Use a service like `diawi.com` or transfer the generated `.ipa` to your phone.
-   - In AltStore, go to "My Apps", tap the "+" icon, and select the `FamilySafetyParent.ipa`.
-5. **Trust Certificate**: Go to Settings -> General -> VPN & Device Management on your iPhone and trust your Apple ID certificate.
 
-## 8. Deployment
-- The backend is ready for Dockerized deployment.
-- Use the `infrastructure/nginx.conf` for reverse proxy setup.
-- Ensure STUN/TURN servers are configured in `WebRTCManager` for production use.
+### Option A: Build via GitHub Actions (Recommended)
+1. **Push to GitHub**: The project includes a GitHub Actions workflow in `.github/workflows/ios-build.yml`.
+2. **Missing Native Folders**: If your repository is missing the `ios/` folder, run the following in `parent-app/` on a local machine first:
+   ```bash
+   npx react-native-asset
+   # Or if starting fresh:
+   npx react-native init FamilySafetyParent --directory .
+   ```
+3. **Trigger Build**: Go to your GitHub repository -> **Actions** -> **iOS IPA Build** -> **Run workflow**.
+4. **Download IPA**: Once complete, download the artifact from the build summary.
+
+### Option B: Build Manually (Requires a Mac)
+1. Navigate to `parent-app/` and run `npm install`.
+2. Generate the iOS bundle:
+   ```bash
+   npx react-native bundle --dev false --platform ios --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios
+   ```
+3. Open the project in Xcode (`ios/FamilySafetyParent.xcworkspace`).
+4. Set the build destination to **Any iOS Device (arm64)**.
+5. Go to **Product > Archive**.
+6. Once the archive is created, select **Distribute App > Ad Hoc** or **Development**.
+7. Export the `.ipa` file.
+
+### 2. Sideloading via AltServer (Windows/Mac)
+1. **Download AltServer**: Get it from [altstore.io](https://altstore.io/).
+2. **Installation**:
+   - On Windows: Install iCloud and iTunes (not from Microsoft Store, use the direct Apple versions).
+   - Run AltServer and connect your iPhone via USB.
+3. **Install AltStore**:
+   - Right-click AltServer in the system tray -> **Install AltStore** -> **[Your iPhone Name]**.
+   - Enter your Apple ID and password (used for signing).
+4. **Install the Parent App**:
+   - Transfer the `.ipa` file to your iPhone (via AirDrop, iCloud Drive, or Email).
+   - Open **AltStore** on your iPhone.
+   - Go to the **My Apps** tab and tap the **+** icon at the top left.
+   - Select the `FamilySafetyParent.ipa` file.
+   - AltStore will sign and install the app.
+5. **Trust the App**:
+   - Go to **Settings > General > VPN & Device Management**.
+   - Tap your Apple ID and select **Trust**.
+
+*Note: Sideloaded apps expire after 7 days. You can refresh them in AltStore while connected to the same Wi-Fi as AltServer.*
+
+## 8. GitHub Repository
+The codebase is hosted at: `https://github.com/dhalchand2021/Family-Safety`
+To update the repository:
+```bash
+git add .
+git commit -m "Your update message"
+git push origin main
+```
