@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "devices": {
+      ".indexOn": ["userId", "deviceId"],
+      "$device_id": {
+        ".read": "auth != null && data.child('userId').val() === auth.uid",
+        ".write": "auth != null && (data.child('userId').val() === auth.uid || !data.exists())"
+      }
+    },
+    "logs": {
+      "$device_id": {
+        ".read": "auth != null && root.child('devices').child($device_id).child('userId').val() === auth.uid",
+        ".write": "auth != null && root.child('devices').child($device_id).child('userId').val() === auth.uid"
+      }
+    }
+  }
+}

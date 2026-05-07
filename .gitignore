@@ -1,0 +1,32 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+
+# Android (Child App)
+child-app/.gradle/
+child-app/build/
+child-app/app/build/
+child-app/local.properties
+*.iml
+.idea/
+.DS_Store
+
+# React Native (Parent App)
+parent-app/node_modules/
+parent-app/ios/Pods/
+parent-app/ios/build/
+parent-app/android/app/build/
+parent-app/android/.gradle/
+parent-app/.bundle/
+parent-app/vendor/bundle/
+
+# Backend
+backend/node_modules/
+backend/.env
+
+# Misc
+.vscode/
+*.log
+infrastructure/certs/

@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Family Safety Child</string>
+    <string name="status_active">Protection Active</string>
+    <string name="status_description">Your device is being monitored by Family Safety.</string>
+    <string name="pair_new_device">Pair New Device</string>
+    <string name="scan_to_pair">Scan to Pair</string>
+    <string name="scan_instruction">Open the Parent App and scan this QR code to connect this device.</string>
+    <string name="pairing_code">Pairing Code: %1$s</string>
+</resources>
