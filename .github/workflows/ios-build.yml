@@ -36,8 +36,8 @@ jobs:
             cp App.tsx ../tmp_src/
             cp package.json ../tmp_src/
             
-            # Use --force and handle the prompt non-interactively
-            yes | npx react-native@0.72.3 init FamilySafetyParent --directory . --skip-install --version 0.72.3 --pm npm
+            # Fixed: Changed --pm to --npm for older CLI versions and added --skip-install to prevent hanging
+            npx react-native@0.72.3 init FamilySafetyParent --directory . --skip-install --version 0.72.3 --npm
             
             cp -r ../tmp_src/src/* ./src/
             cp ../tmp_src/App.tsx ./App.tsx
@@ -49,7 +49,7 @@ jobs:
             fi
             mkdir -p ios
             if [ ! -f "ios/exportOptions.plist" ]; then
-              cp ../parent-app/ios/exportOptions.plist ./ios/exportOptions.plist || echo "Using default export options"
+              echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>method</key><string>ad-hoc</string><key>teamID</key><string>YOUR_TEAM_ID</string><key>uploadBitcode</key><false/><key>compileBitcode</key><false/><key>destination</key><string>export</string><key>signingStyle</key><string>automatic</string></dict></plist>' > ios/exportOptions.plist
             fi
           fi
 
