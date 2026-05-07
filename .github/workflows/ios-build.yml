@@ -55,19 +55,24 @@ jobs:
           ruby-version: '3.2'
           bundler-cache: true
 
-      - name: Install CocoaPods with Boost Mirror Fix
+      - name: Install CocoaPods with Fixes
         run: |
           cd parent-app/ios
           if [ -f "Podfile" ]; then
-            # The default boost mirror is failing checksum. 
-            # We override the boost podspec to use a direct reliable mirror before installing.
+            # 1. Fix Boost mirror
             BOOST_SPEC="../node_modules/react-native/third-party-podspecs/boost.podspec"
             if [ -f "$BOOST_SPEC" ]; then
               echo "Fixing Boost podspec mirror..."
               sed -i '' 's|https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2|https://archives.boost.io/release/1.76.0/source/boost_1_76_0.tar.bz2|g' "$BOOST_SPEC"
             fi
             
-            # Clear pod cache to avoid using the corrupted download
+            # 2. Fix Firebase Modular Headers issue
+            echo "Patching Podfile for modular headers..."
+            sed -i '' "1i\\
+            use_modular_headers!
+            " Podfile
+            
+            # Clear pod cache for boost
             pod cache clean boost --all
             
             pod install || (pod repo update && pod install)
