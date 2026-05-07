@@ -29,14 +29,24 @@ jobs:
           cd parent-app
           npm install
 
-      - name: Initialize Native iOS Project (if missing)
+      - name: Initialize Native Project (if missing)
         run: |
           cd parent-app
-          if [ ! -d "ios/FamilySafetyParent.xcodeproj" ]; then
-            echo "iOS native project missing. Initializing..."
-            npx react-native bundle --platform ios --dev false --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios
-            # Note: In a real CI, you'd usually have the ios folder committed. 
-            # This step is a fallback for src-only repos.
+          if [ ! -d "ios" ] || [ ! -d "ios/FamilySafetyParent.xcodeproj" ]; then
+            echo "Native iOS project missing. Attempting to generate..."
+            # Move existing files to a temp location to avoid init conflicts
+            mkdir ../tmp_src
+            cp -r src ../tmp_src/
+            cp App.tsx ../tmp_src/
+            cp package.json ../tmp_src/
+            
+            # Run init to generate native folders
+            npx react-native@0.72.3 init FamilySafetyParent --directory . --skip-install --version 0.72.3 --pm npm --force
+            
+            # Restore our source code
+            cp -r ../tmp_src/src/* ./src/
+            cp ../tmp_src/App.tsx ./App.tsx
+            cp ../tmp_src/package.json ./package.json
           fi
 
       - name: Setup Ruby
@@ -48,35 +58,19 @@ jobs:
       - name: Install CocoaPods
         run: |
           cd parent-app/ios
-          if [ -f "Podfile" ]; then
-            pod install
-          fi
+          pod install
 
       - name: Build iOS Archive
         run: |
           cd parent-app
-          # Ensure bundle exists
-          mkdir -p ios
-          npx react-native bundle --dev false --platform ios --entry-file App.tsx --bundle-output ios/main.jsbundle --assets-dest ios
-          
-          # Attempt build if workspace exists
-          if [ -d "ios/FamilySafetyParent.xcworkspace" ]; then
-            cd ios
-            xcodebuild -workspace FamilySafetyParent.xcworkspace -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
-          else
-            echo "Skipping xcodebuild: xcworkspace not found. Please ensure the 'ios' folder is committed to the repository."
-            exit 1
-          fi
+          npx react-native bundle --dev false --platform ios --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios
+          cd ios
+          xcodebuild -workspace FamilySafetyParent.xcworkspace -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
 
       - name: Export IPA
         run: |
           cd parent-app/ios
-          if [ -d "FamilySafetyParent.xcarchive" ]; then
-            xcodebuild -exportArchive -archivePath FamilySafetyParent.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build
-          else
-            echo "Archive not found, skipping export."
-            exit 1
-          fi
+          xcodebuild -exportArchive -archivePath FamilySafetyParent.xcarchive -exportOptionsPlist exportOptions.plist -exportPath build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
