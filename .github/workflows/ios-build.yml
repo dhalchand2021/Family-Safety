@@ -66,11 +66,25 @@ jobs:
               sed -i '' 's|https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2|https://archives.boost.io/release/1.76.0/source/boost_1_76_0.tar.bz2|g' "$BOOST_SPEC"
             fi
             
-            # 2. Fix Firebase Modular Headers issue
-            echo "Patching Podfile for modular headers..."
+            # 2. Fix Firebase Modular Headers and Deployment Target
+            echo "Patching Podfile for modular headers and deployment target..."
+            # Add use_modular_headers! and force iOS 13.0 for all targets
             sed -i '' "1i\\
-            use_modular_headers!
+            use_modular_headers!\\
+            platform :ios, '13.0'
             " Podfile
+            
+            # Add post_install block to force deployment target 13.0 for all pods
+            cat <<EOF >> Podfile
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+    end
+  end
+end
+EOF
             
             # Clear pod cache for boost
             pod cache clean boost --all
@@ -83,10 +97,11 @@ jobs:
           cd parent-app
           npx react-native bundle --dev false --platform ios --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios
           cd ios
+          # Force xcodebuild to use iOS 13.0
           if [ -d "FamilySafetyParent.xcworkspace" ]; then
-            xcodebuild -workspace FamilySafetyParent.xcworkspace -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
+            xcodebuild -workspace FamilySafetyParent.xcworkspace -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive IPHONEOS_DEPLOYMENT_TARGET=13.0 archive
           else
-            xcodebuild -project FamilySafetyParent.xcodeproj -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive archive
+            xcodebuild -project FamilySafetyParent.xcodeproj -scheme FamilySafetyParent -configuration Release -archivePath FamilySafetyParent.xcarchive IPHONEOS_DEPLOYMENT_TARGET=13.0 archive
           fi
 
       - name: Export IPA
